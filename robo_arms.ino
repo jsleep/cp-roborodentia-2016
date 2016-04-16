@@ -56,6 +56,13 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define SERVOMAX  600 // this is the 'maximum' pulse length count (out of 4096)
 #define SERVOMID  375 // approximate middle of the range shown above
 
+#define SHOULDER_HIGH 40
+#define SHOULDER_LOW 130
+#define WRIST_HIGH 30
+#define WRIST_LOW 110
+#define GRABBER_OPEN 90
+#define GRABBER_CLOSE 60
+
 //MANA'S CHANGES 
 #define SPIDERHANDS 2
 
@@ -76,6 +83,7 @@ void setup() {
   pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 
   pinMode(SPIDERHANDS, INPUT); 
+  centerPlace();
  // pinMode(13, OUTPUT); 
 //  digitalWrite(SPIDERHANDS, HIGH); 
   //enableInterrupt(SPIDERHANDS, positionArms, CHANGE);
@@ -87,8 +95,9 @@ void setup() {
 void loop() {
   if(digitalRead(SPIDERHANDS) == HIGH) {
     positionArms(); 
+    delay(1);
   }
-  
+
 }
 
 /*
@@ -147,21 +156,52 @@ void positionArms(){
  * 4 (shoulder), 5 (wrist), and 6 (grabber).
  * 
  * NOTE: delays are probably unnecessary.
+ * SHOULDER HIGH POINT: 40
+ * SHOULDER LOW POINT: 130
+ * WRIST LOW POINT: 90
+ * WRIST HIGH : 30
+ * GRABBER OPEN: 90
+ * GRABBER CLOSE: 60
  */
 void centerGrab() {
   Serial.print("grabbing \n"); 
-  pwm.setPWM(4, 0, map(140, 0, 180, SERVOMIN, SERVOMAX)); delay(150);
-  pwm.setPWM(5, 0, convert(135)); delay(150);
-  pwm.setPWM(6, 0, convert(0)); delay(150);
+  pwm.setPWM(4, 0, convert(SHOULDER_LOW)); delay(150);
+  //pwm.setPWM(5, 0, convert(WRIST_LOW)); delay(150);
+  pwm.setPWM(6, 0, convert(GRABBER_CLOSE)); delay(750);
 
   // Lift after grabbing
-  pwm.setPWM(4, 0, convert(90)); delay(150);
+  slowLiftOrDrop(1);
 }
 
 void centerPlace() {
-  Serial.print("placeingn"); 
-  pwm.setPWM(5, 0, convert(135)); delay(150);
-  pwm.setPWM(4, 0, convert(140)); delay(750);
-  pwm.setPWM(6, 0, convert(30)); delay(150);
+  Serial.print("placeingn");   
+  slowLiftOrDrop(0);
+  //pwm.setPWM(5, 0, convert(WRIST_HIGH)); delay(150);
+  pwm.setPWM(6, 0, convert(GRABBER_OPEN)); delay(750);
+
+  pwm.setPWM(4, 0, convert(SHOULDER_HIGH)); delay(750);
+}
+
+void slowLiftOrDrop(byte lift) { // for handling rings
+  unsigned int i, wristAngle;
+  
+  if(lift){
+    wristAngle = WRIST_LOW;
+    for(i = SHOULDER_LOW; i >= SHOULDER_HIGH; i-=3){
+        pwm.setPWM(4,0,convert(i)); 
+        pwm.setPWM(5,0,convert(wristAngle-=2));
+        delay(35);
+     }
+  }
+  else{
+    wristAngle = WRIST_HIGH;
+     for(i = SHOULDER_HIGH; i <= SHOULDER_LOW; i+=3){
+        
+        pwm.setPWM(4,0,convert(i)); 
+        pwm.setPWM(5,0,convert(wristAngle+=2));
+        delay(35);
+     }
+  }
+  //pwm.setPWM(5,0,25);
 }
 
