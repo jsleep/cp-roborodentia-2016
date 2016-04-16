@@ -75,11 +75,11 @@ void setup() {
   
   pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 
-  yield();
-
   pinMode(SPIDERHANDS, INPUT); 
   digitalWrite(SPIDERHANDS, HIGH); 
-  PCintPort::attachInterrupt(SPIDERHANDS, positionArms, CHANGE);   
+  PCintPort::attachInterrupt(SPIDERHANDS, positionArms, CHANGE);
+
+  yield();
 }
 
 void loop() {
