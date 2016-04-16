@@ -41,6 +41,7 @@
  *************************************************************************/
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
+#include <PinChangeInt.h>
 
 // called this way, it uses the default address 0x40
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
@@ -55,8 +56,18 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define SERVOMAX  600 // this is the 'maximum' pulse length count (out of 4096)
 #define SERVOMID  375 // approximate middle of the range shown above
 
+//MANA'S CHANGES 
+#define SPIDERHANDS 6
+
+// Macro for mapping angle values to a pulse length
+#define convert(x) map(x,0,180,SERVOMIN,SERVOMAX)
+
 // global servo # counter
 uint8_t servonum = 0;
+
+// States
+enum State { ringsGrabbed, emptyHands };
+State currState = emptyHands;
 
 void setup() {
   // No serial communication in the actual run code
@@ -65,6 +76,14 @@ void setup() {
   pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 
   yield();
+
+  pinMode(SPIDERHANDS, INPUT); 
+  digitalWrite(SPIDERHANDS, HIGH); 
+  PCintPort::attachInterrupt(SPIDERHANDS, positionArms, CHANGE);   
+}
+
+void loop() {
+  
 }
 
 /*
@@ -78,25 +97,56 @@ void setup() {
  *   CONSIDERATIONS: I should consider when I am placing or grabbing rings
  *   because each case may require moving the servos in separate orders.
  */
-void positionArms(int servoDegrees[]){
-  int pulseLen[16]; // array for pulse values for use with setPWM()
-
-  // map all degree values to pulse values
-  for(int i = 0; i < 16; i++){
-    pulseLen[i] = map(servoDegrees[i], 0, 180, SERVOMIN, SERVOMAX);
+void positionArms(){
+  //Argument was int servoarms[]
+// ALL OF THE BELOW CODE IS DEPRECATED FOR THE TIME BEING BECAUSE ROBOTS
+//  int pulseLen[16]; // array for pulse values for use with setPWM()
+//
+//  // map all degree values to pulse values
+//  for(int i = 0; i < 16; i++){
+//    pulseLen[i] = map(servoDegrees[i], 0, 180, SERVOMIN, SERVOMAX);
+//  }
+//  // first rotate the servos which control the turning of the left/right arms
+//  pwm.setPWM(12, 0, pulseLen[12]); // left arm
+//  pwm.setPWM(13, 0, pulseLen[13]); // right arm
+//
+//  // move each arm individually and delay a bit after adjusting the servos
+//  //  in an arm
+//  for(int j = 0; j < 12; j++){
+//    if(j > 0 && (j % 4 == 0)){ // If we're about to start the 2nd/3rd arm
+//      delay(500); // wait a 1/2 second
+//    }
+//    pwm.setPWM(j, 0, pulseLen[j]);
+//  }
+  if(currState == ringsGrabbed){
+    centerPlace();
+    currState = emptyHands;
   }
-  // first rotate the servos which control the turning of the left/right arms
-  pwm.setPWM(12, 0, pulseLen[12]); // left arm
-  pwm.setPWM(13, 0, pulseLen[13]); // right arm
-
-  // move each arm individually and delay a bit after adjusting the servos
-  //  in an arm
-  for(int j = 0; j < 12; j++){
-    if(j > 0 && (j % 4 == 0)){ // If we're about to start the 2nd/3rd arm
-      delay(500); // wait a 1/2 second
-    }
-    pwm.setPWM(j, 0, pulseLen[j]);
+  else if(currState == emptyHands){
+    centerGrab();
+    currState = ringsGrabbed;
   }
 
+}
+
+/* 
+ * The servos that are a part of the center arm reside on shield PWM channels
+ * 4 (shoulder), 5 (wrist), and 6 (grabber).
+ * 
+ * NOTE: delays are probably unnecessary.
+ */
+void centerGrab() {
+  pwm.setPWM(4, 0, convert(140)); delay(50);
+  pwm.setPWM(5, 0, convert(135)); delay(50);
+  pwm.setPWM(6, 0, convert(0)); delay(50);
+
+  // Lift after grabbing
+  pwm.setPWM(4, 0, convert(90)); delay(50);
+}
+
+void centerPlace() {
+  pwm.setPWM(5, 0, convert(135)); delay(50);
+  pwm.setPWM(4, 0, convert(140)); delay(50);
+  pwm.setPWM(6, 0, convert(90)); delay(50);
 }
 
