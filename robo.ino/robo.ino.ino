@@ -14,6 +14,7 @@
 
 #define SIX_IN 505
 #define THREE_IN 235
+#define INTERRUPT_PIN 53
 
 QTRSensorsRC qtr((unsigned char[]) {31, 33, 35,37,39,41, 43, 45}, 8);
 RoboShield rs(0);
@@ -34,6 +35,8 @@ void setup() {
 
   qtr.calibratedMinimumOn = calibratedMinimumOn;
   qtr.calibratedMaximumOn = calibratedMaximumOn;
+  pinMode(INTERRUPT_PIN, OUTPUT);      // sets the digital pin as output
+  digitalWrite(INTERRUPT_PIN, LOW);   // sets the LED on
 }
 
 byte FollowLine(int position, unsigned int sensors[8]) {
@@ -52,9 +55,11 @@ byte FollowLine(int position, unsigned int sensors[8]) {
 
   if(error < 0) { // left of line, speed up left motor
     sRM -= ((double) abs(error) ) / 3350 * 10;
+    //sLM -= ((double) abs(error) ) / 3350 * 2;
   }
   else if(error > 0) { // right of line, speed up right motor 
     sLM += ((double) abs(error)) / 3350 * 10;
+    //sRM += ((double) abs(error)) / 3350 * 2;
   }
  
   Serial.print("L: ");
@@ -155,35 +160,62 @@ void turnAround() {
 void loop() {
   static byte position = 0;
   if(rs.buttonPressed() == 1){
-    rs.lcdClear();
-    rs.lcdPrintf("Following Line.");
-    unsigned int sensors[8];
+      unsigned int sensors[8];
       while(1){
+        //grab rings
+        rs.lcdClear();
+        rs.lcdPrintf("Grabbing Rings.");
+        delay(1500);
+        digitalWrite(INTERRUPT_PIN, HIGH);   // sets the LED on
+        delay(1);
+        digitalWrite(INTERRUPT_PIN, LOW);   // sets the LED on
+        delay(1500);
+        rs.lcdClear();
+        rs.lcdPrintf("Turning around");
         turnAround();
         delay(500);
+        rs.lcdClear();
+        rs.lcdPrintf("Following to center");
         while(FollowLine(qtr.readLine(sensors), sensors)) {
           ;
         }
 
         delay(500);
+        rs.lcdClear();
+        rs.lcdPrintf("Turning right");
         turnRight();
         delay(500);
+        rs.lcdClear();
+        rs.lcdPrintf("Following to fork");
         while(FollowLine(qtr.readLine(sensors), sensors)) {
           ;
         }
-        delay(500);
+        delay(1000);
+        //place rings
+        digitalWrite(INTERRUPT_PIN, HIGH);   // sets the LED on
+        delay(1);
+        digitalWrite(INTERRUPT_PIN, LOW);   // sets the LED on
+        delay(3000);
+        rs.lcdClear();
+        rs.lcdPrintf("Turn around");
         turnAround();
         delay(500);
+        rs.lcdClear();
+        rs.lcdPrintf("Following to center");
         while(FollowLine(qtr.readLine(sensors), sensors)) {
           ;
         }
         delay(500);
+        rs.lcdClear();
+        rs.lcdPrintf("Turning left");
         turnLeft();
         delay(500);
+        rs.lcdClear();
+        rs.lcdPrintf("Following to fork");
         while(FollowLine(qtr.readLine(sensors), sensors)) {
           ;
         }
-        delay(5000);
+        
       }
       }
     }
