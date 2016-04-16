@@ -58,10 +58,10 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 #define SHOULDER_HIGH 40
 #define SHOULDER_LOW 130
-#define WRIST_HIGH 30
-#define WRIST_LOW 110
+#define WRIST_HIGH 60
+#define WRIST_LOW 140
 #define GRABBER_OPEN 90
-#define GRABBER_CLOSE 60
+#define GRABBER_CLOSE 50
 
 //MANA'S CHANGES 
 #define SPIDERHANDS 2
@@ -165,7 +165,7 @@ void positionArms(){
  */
 void centerGrab() {
   Serial.print("grabbing \n"); 
-  pwm.setPWM(4, 0, convert(SHOULDER_LOW)); delay(150);
+  pwm.setPWM(4, 0, convert(SHOULDER_LOW)); delay(500);
   //pwm.setPWM(5, 0, convert(WRIST_LOW)); delay(150);
   pwm.setPWM(6, 0, convert(GRABBER_CLOSE)); delay(750);
 
