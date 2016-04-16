@@ -41,7 +41,7 @@
  *************************************************************************/
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
-#include <PinChangeInt.h>
+
 
 // called this way, it uses the default address 0x40
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
@@ -57,7 +57,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define SERVOMID  375 // approximate middle of the range shown above
 
 //MANA'S CHANGES 
-#define SPIDERHANDS 6
+#define SPIDERHANDS 2
 
 // Macro for mapping angle values to a pulse length
 #define convert(x) map(x,0,180,SERVOMIN,SERVOMAX)
@@ -72,17 +72,22 @@ State currState = emptyHands;
 void setup() {
   // No serial communication in the actual run code
   pwm.begin();
-  
+  Serial.begin(9600);
   pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 
   pinMode(SPIDERHANDS, INPUT); 
-  digitalWrite(SPIDERHANDS, HIGH); 
-  PCintPort::attachInterrupt(SPIDERHANDS, positionArms, CHANGE);
-
-  yield();
+ // pinMode(13, OUTPUT); 
+//  digitalWrite(SPIDERHANDS, HIGH); 
+  //enableInterrupt(SPIDERHANDS, positionArms, CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(SPIDERHANDS),centerGrab, RISING);
+  //attachInterrupt(digitalPinToInterrupt(SPIDERHANDS),centerPlace, FALLING);
+  //yield();
 }
 
 void loop() {
+  if(digitalRead(SPIDERHANDS) == HIGH) {
+    positionArms(); 
+  }
   
 }
 
@@ -98,6 +103,9 @@ void loop() {
  *   because each case may require moving the servos in separate orders.
  */
 void positionArms(){
+  //noInterrupts(); 
+  Serial.println("new");
+  delay(70);
   //Argument was int servoarms[]
 // ALL OF THE BELOW CODE IS DEPRECATED FOR THE TIME BEING BECAUSE ROBOTS
 //  int pulseLen[16]; // array for pulse values for use with setPWM()
@@ -118,6 +126,8 @@ void positionArms(){
 //    }
 //    pwm.setPWM(j, 0, pulseLen[j]);
 //  }
+
+
   if(currState == ringsGrabbed){
     centerPlace();
     currState = emptyHands;
@@ -126,8 +136,11 @@ void positionArms(){
     centerGrab();
     currState = ringsGrabbed;
   }
-
+  
+  //interrupts(); 
 }
+
+
 
 /* 
  * The servos that are a part of the center arm reside on shield PWM channels
@@ -136,17 +149,19 @@ void positionArms(){
  * NOTE: delays are probably unnecessary.
  */
 void centerGrab() {
-  pwm.setPWM(4, 0, convert(140)); delay(50);
-  pwm.setPWM(5, 0, convert(135)); delay(50);
-  pwm.setPWM(6, 0, convert(0)); delay(50);
+  Serial.print("grabbing \n"); 
+  pwm.setPWM(4, 0, map(140, 0, 180, SERVOMIN, SERVOMAX)); delay(150);
+  pwm.setPWM(5, 0, convert(135)); delay(150);
+  pwm.setPWM(6, 0, convert(0)); delay(150);
 
   // Lift after grabbing
-  pwm.setPWM(4, 0, convert(90)); delay(50);
+  pwm.setPWM(4, 0, convert(90)); delay(150);
 }
 
 void centerPlace() {
-  pwm.setPWM(5, 0, convert(135)); delay(50);
-  pwm.setPWM(4, 0, convert(140)); delay(50);
-  pwm.setPWM(6, 0, convert(90)); delay(50);
+  Serial.print("placeingn"); 
+  pwm.setPWM(5, 0, convert(135)); delay(150);
+  pwm.setPWM(4, 0, convert(140)); delay(750);
+  pwm.setPWM(6, 0, convert(30)); delay(150);
 }
 
